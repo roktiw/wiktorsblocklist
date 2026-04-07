@@ -1,3 +1,2 @@
 log.tailscale.com
-logs.ads.vungle.com
-*.vungle.com
+vungle.com
