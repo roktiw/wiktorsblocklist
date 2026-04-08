@@ -13,3 +13,4 @@ www.belkin.com
 belkin.com
 mobile.events.data.microsoft.com
 telemetry.officeapps.live.com
+browser.events.data.microsoft.com
