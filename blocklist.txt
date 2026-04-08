@@ -4,3 +4,4 @@ logs.ads.vungle.com
 klaviyo.com
 yotpo.com
 zaius.com
+grid.grupawp.pl
