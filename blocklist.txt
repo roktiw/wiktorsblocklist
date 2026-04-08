@@ -2,3 +2,5 @@ log.tailscale.com
 vungle.com
 logs.ads.vungle.com
 klaviyo.com
+yotpo.com
+zaius.com
