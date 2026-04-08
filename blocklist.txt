@@ -11,3 +11,4 @@ belkin.com
 criteo.com
 www.belkin.com
 belkin.com
+mobile.events.data.microsoft.com
