@@ -1,0 +1,64 @@
+name: Mac mini CI
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, master, codex/mac-mini-ci]
+permissions:
+  contents: read
+concurrency:
+  group: mac-mini-ci-${{ github.repository }}-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  verify:
+    name: "Blocklist data integrity only; no application build"
+    runs-on: [mac-mini-m4, macos-arm64]
+    timeout-minutes: 40
+    env:
+      CI: "true"
+      HUSKY: "0"
+      NEXT_TELEMETRY_DISABLED: "1"
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout exact source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Host receipt
+        run: |
+          set -euo pipefail
+          test "$(uname -s)" = Darwin
+          test "$(uname -m)" = arm64
+          echo "Runner: $RUNNER_NAME; source: $GITHUB_SHA"
+          sw_vers
+          echo "Scope: Blocklist data integrity only; no application build" >> "$GITHUB_STEP_SUMMARY"
+      - name: "1. /opt/homebrew/bin/python3.14 -c \"from pathlib import Path; p=Path('blocklist.txt'); s=p.read_text();"
+        run: |
+          set -euo pipefail
+          /opt/homebrew/bin/python3.14 -c "from pathlib import Path; p=Path('blocklist.txt'); s=p.read_text(); assert s.strip(); assert '\x00' not in s; print('Blocklist nonempty UTF-8 lines:',len(s.splitlines())); print('Application runtime tests: NOT_APPLICABLE')"
+      - name: Preserve reports on this Mac
+        if: always()
+        run: |
+          set -euo pipefail
+          destination="$HOME/.local/share/github-ci-reports/$GITHUB_REPOSITORY/$GITHUB_RUN_ID"
+          mkdir -p "$destination"
+          printf '%s\n' "$GITHUB_SHA" > "$destination/source.sha"
+          for item in mac-ci-tests.xml test-results playwright-report; do
+            if [[ -e "$item" ]]; then cp -R "$item" "$destination/"; fi
+          done
+          echo "Local reports: $destination" >> "$GITHUB_STEP_SUMMARY"
+      - name: Optional GitHub artifact upload
+        if: always() && vars.MAC_CI_UPLOAD_ARTIFACTS == 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: mac-mini-ci-${{ github.run_id }}
+          path: |
+            mac-ci-tests.xml
+            test-results/
+            playwright-report/
+          if-no-files-found: ignore
+          retention-days: 7
+      - name: Remove job dependency trees
+        if: always()
+        run: git clean -ffdx -- node_modules apps/web/node_modules .ci-venv
